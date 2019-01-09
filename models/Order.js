@@ -6,7 +6,7 @@ const OrderSchema = new Schema(
         items: [
             {
                 product: {
-                    id: Schema.Types.ObjectId,
+                    id: String,
                     title: String,
                     price: Number
                 },

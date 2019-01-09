@@ -2,16 +2,19 @@
 
 const Product = require("../../../models/Product");
 const { createQuery } = require("../../../utils");
+const { mustBeLoggedIn } = require("../../authHelper");
+const { DoesNotExistError } = require("../../../errors");
 
 /**
  * Create a new Product
  *
  * @param {*} obj unused
- * @param {Object} product { name:String, price:Number, shop_id:String }
+ * @param {Object} product { title:String, price:Number, inventory_count:Number }
  * @param {Object} context {user: Object}
  * @returns {Promise} resolve to new Product
  */
 exports.createProduct = (obj, { title, price, inventory_count }, context) => {
+    mustBeLoggedIn(context.user);
     return Product.create({
         title,
         price,
@@ -24,26 +27,27 @@ exports.createProduct = (obj, { title, price, inventory_count }, context) => {
  * Update Existing Product
  *
  * @param {*} obj unused
- * @param {Object} product { product_id:String, title:String,
+ * @param {Object} product { id:String, title:String,
  * price:Number, inventory_count:Number }
  * @param {Object} context {user: Object}
  * @returns {Promise} resolves to updated Product
  */
 exports.updateProduct = (
     obj,
-    { product_id, title, price, inventory_count },
+    { id, title, price, inventory_count },
     context
 ) => {
+    mustBeLoggedIn(context.user);
     return Product.findOneAndUpdate(
-        { _id: product_id, owner: context.user._id },
+        { _id: id, owner: context.user._id },
         createQuery({ title, price, inventory_count }),
         { new: true }
     )
         .exec()
         .then(updated => {
             if (updated === null) {
-                throw new Error(
-                    "Product does not exist/logged in user is not owner."
+                throw new DoesNotExistError(
+                    "You do not own a product with that ID"
                 );
             }
             return updated;
@@ -55,10 +59,18 @@ exports.updateProduct = (
  * shop it belongs to.
  *
  * @param {*} obj unused
- * @param {Object} product { shop_id:String, product_id:String, name:String, price:Number }
+ * @param {Object} product { id:String}
  * @param {Object} context {user: Object}
  * @returns {Promise} resolves to {n:Int, ok:Int}
  */
-exports.deleteProduct = (obj, { shop_id, product_id }, context) => {
-    return Product.remove({ _id: product_id, owner: context.user._id });
+exports.deleteProduct = (obj, { id }, context) => {
+    mustBeLoggedIn(context.user);
+    return Product.remove({ _id: id, owner: context.user._id }).then(resp => {
+        if (resp.n === 0) {
+            throw new DoesNotExistError(
+                "You do not own a product with that ID"
+            );
+        }
+        return resp;
+    });
 };

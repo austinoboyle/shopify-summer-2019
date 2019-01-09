@@ -5,11 +5,11 @@ const idValidator = require("mongoose-id-validator");
 
 module.exports = function() {
     /*
-    * When we create a new object, we validate that all reference ids to
-    * other objects are valid
-    */
+     * When we create a new object, we validate that all reference ids to
+     * other objects are valid
+     */
     mongoose.plugin(idValidator);
-    mongoose.Promise = global.Promise;
+    mongoose.Promise = require("bluebird");
     var db = mongoose.connect(
         config.db,
         {

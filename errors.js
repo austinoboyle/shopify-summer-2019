@@ -32,7 +32,10 @@ class DoesNotExistError extends AppError {
 
 class OrderError extends AppError {
     constructor(message, invalidFields) {
-        super(message || "1+ items in your cart could not be purchased.", 405);
+        super(
+            message || "One or more items in your cart could not be purchased.",
+            405
+        );
         this.invalidFields = invalidFields;
     }
 }

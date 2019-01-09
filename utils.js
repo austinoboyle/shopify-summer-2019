@@ -10,7 +10,7 @@ const _ = require("lodash");
  */
 exports.populateTotals = order => {
     if (_.isEmpty(order)) {
-        return new Error("Cart/Order/Item Does not Exist");
+        return order;
     }
     order.items = order.items.map(i => {
         i.total = i.product.price * i.quantity;

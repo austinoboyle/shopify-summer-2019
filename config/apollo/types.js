@@ -34,6 +34,15 @@ let types = `
     }
 
     """
+    An Item on a Cart/Order
+    """
+    type Item {
+        id: ID!
+        title: String!
+        price: Float!
+    }
+
+    """
     A completed order.  Different than carts in that order item prices/totals are frozen in time.  Cart prices will update as product prices update.
     """
     type Order {
@@ -47,7 +56,7 @@ let types = `
     Any service/product added to a cart/order, along with any quantities, rates, and prices that pertain to them.
     """
     type LineItem {
-        product: Product!
+        product: Item!
         quantity: Int!
         total: Float!
     }

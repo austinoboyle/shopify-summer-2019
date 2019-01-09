@@ -14,7 +14,13 @@ const ProductSchema = new Schema({
         type: Number,
         required: true,
         default: 1,
-        min: [0, "Out of Stock"]
+        validate: {
+            validator: function(v) {
+                console.log("VALIDATING ", v, ":", v >= 0);
+                return v >= 0;
+            },
+            message: props => `Not Enough Stock`
+        }
     },
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true }
 });

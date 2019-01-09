@@ -12,6 +12,14 @@ const {
 const { mustBeLoggedIn } = require("../../authHelper");
 const { populateTotals } = require("../../../utils");
 
+function orderFromCart(cart) {
+    cart.items = cart.items.map(i => {
+        i.product.id = i.product._id.toString();
+        return i;
+    });
+    return cart;
+}
+
 function handleOrderError(cart, itemStatus) {
     let promises = [];
     let invalidFields = {};
@@ -46,46 +54,50 @@ function handleOrderError(cart, itemStatus) {
 exports.submitOrder = (obj, {}, context) => {
     mustBeLoggedIn(context.user);
     let itemStatus = {};
+    let hasError = false;
     return Cart.findOne({ user: context.user._id }).then(c => {
         if (c === null) {
             throw new DoesNotExistError("No Order To Submit.");
         }
+        if (c.items.length === 0) {
+            throw new AppError("Cannot submit an empty cart.", 405);
+        }
         for (let item of c.items) {
             itemStatus[item.product.toString()] = { success: false, error: "" };
         }
-        const promises = [
-            c.items.map(i =>
-                Product.findOneAndUpdate(
-                    { _id: i.product.toString() },
-                    { $inc: { inventory_count: -i.quantity } }
-                )
-                    .then(updated => {
-                        itemStatus[i.product.toString()] = {
-                            success: true,
-                            error: ""
-                        };
-                    })
-                    .catch(e => {
-                        itemStatus[i.product.toString()] = {
-                            success: false,
-                            error: e.message
-                        };
-                    })
-            )
-        ];
+        // itemStatus.hasError = false;
+        const promises = c.items.map(i => {
+            const itemID = i.product.toString();
+            return Product.findOne({ _id: itemID })
+                .exec()
+                .then(product => {
+                    product.inventory_count -= i.quantity;
+                    return product.save();
+                })
+                .then(() => {
+                    itemStatus[itemID].success = true;
+                })
+                .catch(e => {
+                    itemStatus[itemID].error = e.message;
+                    hasError = true;
+                });
+        });
+
         return Promise.all(promises)
-            .then(() => {
-                let orderObj;
+            .then(([...resp]) => {
+                if (hasError) {
+                    throw new Error();
+                }
+                let cartObj;
                 return Cart.populate(c, ["user", "items.product"])
                     .then(populated => populateTotals(populated.toJSON()))
                     .then(totalled => {
-                        orderObj = totalled;
+                        cartObj = totalled;
                         return Cart.remove({ user: context.user._id });
                     })
-                    .then(() => Order.create(orderObj));
+                    .then(() => Order.create(orderFromCart(cartObj)));
             })
             .catch(e => {
-                console.log(e);
                 return handleOrderError(c, itemStatus);
             });
     });

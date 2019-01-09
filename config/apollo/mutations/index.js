@@ -51,13 +51,13 @@ exports.mutationTypes = `
 
         **Access Necessary:** PRODUCT OWNER
         """
-        updateProduct(product_id: ID!, title: String, price: Float, inventory_count: Int): Product!
+        updateProduct(id: ID!, title: String, price: Float, inventory_count: Int): Product!
         """
         Remove a product from shop's inventory
 
         **Access Necessary:** PRODUCT OWNER
         """
-        deleteProduct(product_id: ID!): Deletion!
+        deleteProduct(id: ID!): Deletion!
     }
 `;
 

@@ -56,11 +56,7 @@ const products = (obj, { id, title, owner, available }, context, info) => {
     }
     return Product.find(query)
         .populate("owner")
-        .exec()
-        .then(p => {
-            console.log("PRODS", p);
-            return p;
-        });
+        .exec();
 };
 
 /**
@@ -88,7 +84,13 @@ const cart = (obj, { id }, context) => {
  */
 const orders = (obj, {}, context) => {
     mustBeLoggedIn(context.user);
-    return Order.find({ user: context.user._id }).populate("user");
+    return Order.find({ user: context.user._id })
+        .populate("user")
+        .exec()
+        .then(o => {
+            console.log("ORDERS", o);
+            return o;
+        });
 };
 
 /**
