@@ -18,7 +18,7 @@ let types = `
     type Product {
         id: ID!
         title: ID!
-        owner: ID!
+        owner: User!
         inventory_count: Int!
         price: Float!
     }
@@ -28,11 +28,14 @@ let types = `
     """
     type Cart {
         id: ID!
-        user_id: ID!
+        user: User!
         items: [LineItem!]
         total: Float!
-        active: Boolean!
     }
+
+    """
+    A completed order.  Different than carts in that order item prices/totals are frozen in time.  Cart prices will update as product prices update.
+    """
 
     """
     Any service/product added to a cart/order, along with any quantities, rates, and prices that pertain to them.

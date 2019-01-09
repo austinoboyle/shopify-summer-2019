@@ -6,8 +6,9 @@
 const User = require("../../models/User");
 const Product = require("../../models/Product");
 const Cart = require("../../models/Cart");
+const Order = require("../../models/Order");
 
-const { createQuery } = require("../../utils");
+const { createQuery, populateTotals } = require("../../utils");
 
 /**
  * Documentation/Definitions for Query Types
@@ -17,10 +18,15 @@ exports.queryTypes = `
 type Query {
     "Get users by username or id"
     users(id: ID, username: String): [User!]
+
     "Get products by id, title, owner, or availability"
     products(id: ID, title: String, owner: String, available: Boolean): [Product!]
-    "Get carts by id or user_id"
-    carts(id: ID, user_id: ID): [Cart!]
+
+    "Get your active cart, if any.  Can only have one active cart at a time"
+    cart: Cart
+
+    "Get your past orders"
+    orders: [Order!]
 }
 `;
 
@@ -47,7 +53,9 @@ const products = (obj, { id, title, owner, available }, context, info) => {
     if (available) {
         query.inventory_count = { $gt: 0 };
     }
-    return Product.find(query);
+    return Product.find(query)
+        .populate("owner")
+        .exec();
 };
 
 /**
@@ -57,10 +65,23 @@ const products = (obj, { id, title, owner, available }, context, info) => {
  * @param {*} query { id:String, user_id:String, active:Boolean }
  * @returns {Promise} resolves to array of Carts
  */
-const carts = (obj, { id, user_id, active }) => {
-    return Cart.find(createQuery({ _id: id, user_id }))
+const carts = (obj, { id, active }, context) => {
+    return Cart.find(createQuery({ _id: id, user: context.user._id, active }))
         .populate("items.product")
-        .exec();
+        .populate("user")
+        .exec()
+        .then(carts => carts.map(populateTotals));
+};
+
+/**
+ * Query orders
+ *
+ * @param {*} obj unused
+ * @param {*} query {}
+ * @returns {Promise} resolves to array of Orders made by the user
+ */
+const orders = (obj, {}, context) => {
+    return Order.find({ user: context.user._id });
 };
 
 /**
@@ -71,5 +92,6 @@ const carts = (obj, { id, user_id, active }) => {
 exports.queryResolvers = {
     users,
     products,
-    carts
+    carts,
+    orders
 };

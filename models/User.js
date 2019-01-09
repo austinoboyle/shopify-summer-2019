@@ -6,11 +6,6 @@ const UserSchema = new Schema({
         type: String,
         required: true,
         unique: true
-    },
-    access: {
-        type: String,
-        enum: ["USER", "STOREOWNER", "ADMIN"],
-        default: "USER"
     }
 });
 

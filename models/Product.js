@@ -11,7 +11,10 @@ const ProductSchema = new Schema({
         required: true
     },
     inventory_count: {
-        type: Number
+        type: Number,
+        required: true,
+        default: 1,
+        min: [0, "Out of Stock"]
     },
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true }
 });

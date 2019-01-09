@@ -10,8 +10,8 @@ const typeDefs = gql(types + queryTypes + mutationTypes);
 
 // Provide resolver functions for your schema fields
 const resolvers = {
-    Query: queryResolvers
-    // Mutation: mutationResolvers
+    Query: queryResolvers,
+    Mutation: mutationResolvers
 };
 
 exports.schema = makeExecutableSchema({ typeDefs, resolvers });
