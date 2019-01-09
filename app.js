@@ -7,6 +7,7 @@ const initDB = require("./config/mongoose");
 const { schema } = require("./config/apollo");
 const resetDb = require("./resetDb");
 const User = require("./models/User");
+global.Promise = require("bluebird");
 
 initDB();
 

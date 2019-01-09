@@ -35,4 +35,4 @@ const OrderSchema = new Schema(
 
 const OrderModel = mongoose.model("Order", OrderSchema);
 
-module.exports = CartModel;
+module.exports = OrderModel;

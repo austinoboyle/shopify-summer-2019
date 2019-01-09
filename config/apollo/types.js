@@ -36,6 +36,12 @@ let types = `
     """
     A completed order.  Different than carts in that order item prices/totals are frozen in time.  Cart prices will update as product prices update.
     """
+    type Order {
+        id: ID!
+        user: User!
+        items: [LineItem!]
+        total: Float!
+    }
 
     """
     Any service/product added to a cart/order, along with any quantities, rates, and prices that pertain to them.

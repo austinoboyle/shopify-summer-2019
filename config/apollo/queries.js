@@ -3,6 +3,7 @@
  * @module queries
  */
 
+const { mustBeLoggedIn } = require("../authHelper");
 const User = require("../../models/User");
 const Product = require("../../models/Product");
 const Cart = require("../../models/Cart");
@@ -55,7 +56,11 @@ const products = (obj, { id, title, owner, available }, context, info) => {
     }
     return Product.find(query)
         .populate("owner")
-        .exec();
+        .exec()
+        .then(p => {
+            console.log("PRODS", p);
+            return p;
+        });
 };
 
 /**
@@ -65,12 +70,13 @@ const products = (obj, { id, title, owner, available }, context, info) => {
  * @param {*} query { id:String, user_id:String, active:Boolean }
  * @returns {Promise} resolves to array of Carts
  */
-const carts = (obj, { id, active }, context) => {
-    return Cart.find(createQuery({ _id: id, user: context.user._id, active }))
+const cart = (obj, { id }, context) => {
+    mustBeLoggedIn(context.user);
+    return Cart.findOne({ user: context.user._id })
         .populate("items.product")
         .populate("user")
         .exec()
-        .then(carts => carts.map(populateTotals));
+        .then(populateTotals);
 };
 
 /**
@@ -81,7 +87,8 @@ const carts = (obj, { id, active }, context) => {
  * @returns {Promise} resolves to array of Orders made by the user
  */
 const orders = (obj, {}, context) => {
-    return Order.find({ user: context.user._id });
+    mustBeLoggedIn(context.user);
+    return Order.find({ user: context.user._id }).populate("user");
 };
 
 /**
@@ -92,6 +99,6 @@ const orders = (obj, {}, context) => {
 exports.queryResolvers = {
     users,
     products,
-    carts,
+    cart,
     orders
 };

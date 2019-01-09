@@ -1,9 +1,39 @@
 /** @module mutations-carts */
 
 const Cart = require("../../../models/Cart");
-const User = require("../../../models/User");
 const Product = require("../../../models/Product");
+const Order = require("../../../models/Order");
+const {
+    InventoryError,
+    DoesNotExistError,
+    AppError,
+    OrderError
+} = require("../../../errors");
+const { mustBeLoggedIn } = require("../../authHelper");
 const { populateTotals } = require("../../../utils");
+
+function handleOrderError(cart, itemStatus) {
+    let promises = [];
+    let invalidFields = {};
+    for (let item of cart.items) {
+        const itemID = item.product.toString();
+        if (itemStatus[itemID].success) {
+            promises.push(
+                Product.findOneAndUpdate(
+                    {
+                        _id: itemID
+                    },
+                    { $inc: { inventory_count: item.quantity } }
+                )
+            );
+        } else {
+            invalidFields[itemID] = itemStatus[itemID].error;
+        }
+    }
+    return Promise.all(promises).then(() => {
+        return new OrderError(null, invalidFields);
+    });
+}
 
 /**
  * Submit an order
@@ -14,27 +44,50 @@ const { populateTotals } = require("../../../utils");
  * @returns {Promise} resolves to updated cart
  */
 exports.submitOrder = (obj, {}, context) => {
+    mustBeLoggedIn(context.user);
+    let itemStatus = {};
     return Cart.findOne({ user: context.user._id }).then(c => {
-        console.log(c);
-        let query = { $inc: {} };
-        for (let item of c.items) {
-            query.$inc[item.product] = -item.quantity;
+        if (c === null) {
+            throw new DoesNotExistError("No Order To Submit.");
         }
-        console.log("QUERY", query);
-        return Product.update(query, { new: true }).then(() => {
-            return Cart.findOneAndUpdate(
-                { user: context.user._id, purchased: false },
-                { $set: { purchased: true } },
-                { new: true }
+        for (let item of c.items) {
+            itemStatus[item.product.toString()] = { success: false, error: "" };
+        }
+        const promises = [
+            c.items.map(i =>
+                Product.findOneAndUpdate(
+                    { _id: i.product.toString() },
+                    { $inc: { inventory_count: -i.quantity } }
+                )
+                    .then(updated => {
+                        itemStatus[i.product.toString()] = {
+                            success: true,
+                            error: ""
+                        };
+                    })
+                    .catch(e => {
+                        itemStatus[i.product.toString()] = {
+                            success: false,
+                            error: e.message
+                        };
+                    })
             )
-                .populate("user")
-                .populate("items.product")
-                .exec()
-                .then(c => {
-                    console.log("SUBMITTED", c);
-                    return c;
-                });
-        });
+        ];
+        return Promise.all(promises)
+            .then(() => {
+                let orderObj;
+                return Cart.populate(c, ["user", "items.product"])
+                    .then(populated => populateTotals(populated.toJSON()))
+                    .then(totalled => {
+                        orderObj = totalled;
+                        return Cart.remove({ user: context.user._id });
+                    })
+                    .then(() => Order.create(orderObj));
+            })
+            .catch(e => {
+                console.log(e);
+                return handleOrderError(c, itemStatus);
+            });
     });
 };
 
@@ -46,61 +99,57 @@ exports.submitOrder = (obj, {}, context) => {
  * @param {Object} context {user: user making request}
  * @returns {Promise} resolves to updated cart
  */
+
 exports.addToCart = (obj, { product_id, quantity }, context) => {
-    let activeCart = null;
+    mustBeLoggedIn(context.user);
+    let activeCart;
+    let activeProduct;
+
     return Promise.all([
-        Cart.find({ user: context.user._id }),
-        User.count({ _id: context.user._id })
+        Cart.findOne({ user: context.user._id }),
+        Product.findOne({ _id: product_id })
     ])
-        .then(([cart, userCount]) => {
-            if (!userCount) {
-                return new Error(`User ${user_id} does not exist`);
-            } else if (cart !== null) {
-                return Cart.count({
-                    user: context.user._id,
-                    "items.product": product_id
-                }).then(count => count !== 0);
-            } else {
-                return Cart.create({ user: context.user._id }).then(
-                    () => false
-                );
+        .then(([cart, product]) => {
+            if (product === null) {
+                throw new DoesNotExistError();
             }
-        })
-        .then(alreadyHasItem => {
-            if (alreadyHasItem) {
-                // User has item in their cart already, update the quantity
-                return Cart.findOne({
-                    user: context.user._id,
-                    "items.product": product_id
-                }).then(c => {
-                    return Cart.findOneAndUpdate(
-                        { _id: c._id, "items.product": product_id },
-                        {
-                            $inc: {
-                                "items.$.quantity": quantity
-                            }
-                        },
-                        { new: true }
-                    )
-                        .populate("items.product")
-                        .then(c => populateTotals(c));
+            activeProduct = product;
+            if (cart === null) {
+                return Cart.create({ user: context.user._id }).then(newCart => {
+                    activeCart = newCart;
+                    return 0;
                 });
             } else {
-                // User does not have that item in their cart at that store,
-                // push new LineItem to the cart.
-                return Cart.findOneAndUpdate(
-                    { user: context.user._id },
-                    {
-                        $push: {
-                            items: { product: product_id, quantity }
-                        }
-                    },
-                    { upsert: true, new: true }
-                )
-                    .populate("items.product")
-                    .exec()
-                    .then(o => populateTotals(o));
+                activeCart = cart;
+                const item = activeCart.items.filter(
+                    i => i.product.toString() === product_id
+                );
+                return item.length === 0 ? 0 : item[0].quantity;
             }
+        })
+        .then(currentQuantity => {
+            const totalQuantity = currentQuantity + quantity;
+            if (totalQuantity > activeProduct.inventory_count) {
+                throw new InventoryError(activeProduct);
+            }
+            if (currentQuantity > 0) {
+                // User has item in their cart already, update the quantity
+                activeCart.items = activeCart.items.map(i => {
+                    if (i.product.toString() === product_id) {
+                        i.quantity = totalQuantity;
+                    }
+                    return i;
+                });
+            } else {
+                activeCart.items.push({ product: product_id, quantity });
+            }
+
+            return activeCart.save().then(c => {
+                return Cart.populate(activeCart, [
+                    "user",
+                    "items.product"
+                ]).then(c => populateTotals(c));
+            });
         });
 };
 
@@ -114,28 +163,41 @@ exports.addToCart = (obj, { product_id, quantity }, context) => {
  * @returns {Promise} resolves to updated cart
  */
 exports.updateItemQuantity = (obj, { product_id, quantity }, context) => {
-    if (quantity <= 0) {
-        return Cart.findOneAndUpdate(
-            { user: context.user._id },
-            {
-                $pull: { items: { product: product_id } }
-            },
-            { new: true }
-        )
-            .populate("items.product")
-            .exec()
-            .then(c => populateTotals(c));
-    } else {
-        return Cart.findOneAndUpdate(
-            {
-                user: context.user._id,
-                "items.product": product_id
-            },
-            { $set: { "items.$.quantity": quantity } },
-            { new: true }
-        )
-            .populate("items.product")
-            .exec()
-            .then(c => populateTotals(c));
-    }
+    mustBeLoggedIn(context.user);
+    return Promise.all([
+        Product.findOne({ _id: product_id }),
+        Cart.findOne({ user: context.user._id })
+    ]).then(([product, cart]) => {
+        if (!product) {
+            throw new DoesNotExistError();
+        }
+        if (!cart) {
+            throw new DoesNotExistError("Cart Does Not Exist");
+        }
+        if (quantity > product.inventory_count) {
+            throw new InventoryError(product);
+        }
+        const matchingItems = cart.items.filter(
+            i => i.product.toString() === product_id
+        );
+        if (matchingItems.length === 0) {
+            return new DoesNotExistError("Product Not in Cart");
+        } else if (quantity <= 0) {
+            cart.items = cart.items.filter(
+                i => i.product.toString() !== product_id
+            );
+        } else {
+            cart.items = cart.items.map(i => {
+                if (i.product.toString() === product_id) {
+                    i.quantity = quantity;
+                }
+                return i;
+            });
+        }
+        return cart
+            .save()
+            .then(c =>
+                Cart.populate(c, ["user", "items.product"]).then(populateTotals)
+            );
+    });
 };
