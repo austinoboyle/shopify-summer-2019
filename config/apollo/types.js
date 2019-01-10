@@ -24,7 +24,7 @@ let types = `
     }
 
     """
-    An order in progress.  Carts can be active (user can still add items), or not - user has 'completed' the purchase.
+    An order in progress.  Cart prices will update as product prices update.
     """
     type Cart {
         id: ID!
@@ -34,7 +34,7 @@ let types = `
     }
 
     """
-    An Item on a Cart/Order
+    The 'Product' portion of a LineItem.  Similar to a 'Product', but does not reference the inventory_count or owner.
     """
     type Item {
         id: ID!
@@ -43,7 +43,7 @@ let types = `
     }
 
     """
-    A completed order.  Different than carts in that order item prices/totals are frozen in time.  Cart prices will update as product prices update.
+    A completed order.  Similar to carts, but frozen in time.  Cart prices will update as product prices update.
     """
     type Order {
         id: ID!

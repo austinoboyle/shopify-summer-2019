@@ -57,8 +57,7 @@ exports.updateProduct = (
 };
 
 /**
- * Remove a product.  Deletes product item and removes item Shop.products of
- * shop it belongs to.
+ * Delete a product.
  *
  * @param {*} obj unused
  * @param {Object} product { id:String}

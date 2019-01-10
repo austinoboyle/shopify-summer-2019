@@ -7,12 +7,12 @@ exports.mutationTypes = `
         """
         Create a new user.
         
-        **Access Necessary:** None
+        **Access Necessary:** NONE
         """
         createUser(username: String!): User!
 
         """
-        Delete your account.
+        Delete your account.  Also deletes all of your products.
 
         **Access Necessary:** USER
         """
@@ -33,7 +33,7 @@ exports.mutationTypes = `
         updateItemQuantity(product_id: ID!, quantity: Int!): Cart!
         
         """
-        Make a purchase
+        Make a purchase.  Will change the inventory_count for the items in the marketplace that were purchased.
 
         **Access Necessary:** USER
         """
@@ -47,13 +47,13 @@ exports.mutationTypes = `
         createProduct(title: String!, price: Float!, inventory_count: Int=1): Product!
         """
 
-        Update a product's details (name, price, etc)
+        Update a product's details (title, price, inventory_count)
 
         **Access Necessary:** PRODUCT OWNER
         """
         updateProduct(id: ID!, title: String, price: Float, inventory_count: Int): Product!
         """
-        Remove a product from shop's inventory
+        Delete a product from the marketplace.
 
         **Access Necessary:** PRODUCT OWNER
         """

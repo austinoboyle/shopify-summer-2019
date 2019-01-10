@@ -20,12 +20,22 @@ function orderFromCart(cart) {
     return cart;
 }
 
+/**
+ * Generate an error object based on a cart submitted.  Resets any decremented
+ * product inventory_counts back to their proper value.
+ *
+ * @param {*} cart cart object that failed validation
+ * @param {*} itemStatus contains the status of each item in the cart (fail/success)
+ * @returns {OrderError}
+ */
 function handleOrderError(cart, itemStatus) {
     let promises = [];
     let invalidFields = {};
     for (let item of cart.items) {
         const itemID = item.product.toString();
         if (itemStatus[itemID].success) {
+            // If an item was successful, the associated product.inventory_count
+            // was decremented.  We want to revert that.
             promises.push(
                 Product.findOneAndUpdate(
                     {
@@ -47,9 +57,9 @@ function handleOrderError(cart, itemStatus) {
  * Submit an order
  *
  * @param {*} obj unused
- * @param {Object} item { user_id: submit this user's order }
+ * @param {Object} item {}
  * @param {Object} context {user: user making request}
- * @returns {Promise} resolves to updated cart
+ * @returns {Promise} resolves to created order
  */
 exports.submitOrder = (obj, {}, context) => {
     mustBeLoggedIn(context.user);
@@ -89,7 +99,7 @@ exports.submitOrder = (obj, {}, context) => {
         return Promise.all(promises)
             .then(([...resp]) => {
                 if (hasError) {
-                    throw new Error();
+                    return handleOrderError(c, itemStatus);
                 }
                 let cartObj;
                 return Cart.populate(c, ["user", "items.product"])
@@ -101,7 +111,7 @@ exports.submitOrder = (obj, {}, context) => {
                     .then(() => Order.create(orderFromCart(cartObj)));
             })
             .catch(e => {
-                return handleOrderError(c, itemStatus);
+                return AppError(e.message, e.status);
             });
     });
 };
@@ -110,19 +120,18 @@ exports.submitOrder = (obj, {}, context) => {
  * Add an item to a cart
  *
  * @param {*} obj unused
- * @param {Object} item { product_id: id of product to add, quantity: number of said item }
+ * @param {Object} item { product_id: String, quantity: Number }
  * @param {Object} context {user: user making request}
  * @returns {Promise} resolves to updated cart
  */
 
 exports.addToCart = (obj, { product_id, quantity }, context) => {
+    mustBeLoggedIn(context.user);
     if (quantity <= 0) {
         throw new AppError("Quantity must be >= 0.");
     }
-    mustBeLoggedIn(context.user);
     let activeCart;
     let activeProduct;
-
     return Promise.all([
         Cart.findOne({ user: context.user._id }),
         Product.findOne({ _id: product_id })
@@ -146,6 +155,7 @@ exports.addToCart = (obj, { product_id, quantity }, context) => {
             }
         })
         .then(currentQuantity => {
+            // Reject quantities that are too high
             const totalQuantity = currentQuantity + quantity;
             if (totalQuantity > activeProduct.inventory_count) {
                 throw new InventoryError(activeProduct);
@@ -159,6 +169,7 @@ exports.addToCart = (obj, { product_id, quantity }, context) => {
                     return i;
                 });
             } else {
+                // User does not have item, push a new item to their cart
                 activeCart.items.push({ product: product_id, quantity });
             }
 
@@ -166,17 +177,17 @@ exports.addToCart = (obj, { product_id, quantity }, context) => {
                 return Cart.populate(activeCart, [
                     "user",
                     "items.product"
-                ]).then(c => populateTotals(c));
+                ]).then(populateTotals);
             });
         });
 };
 
 /**
- * Update quantity of specific item in cart
+ * Update quantity of specific item in cart.  Removes item from cart if quantity
+ * <= 0
  *
  * @param {*} obj unused
- * @param {Object} item { user_id: modify this user's cart, shop_id: add item from
- * this store, product_id: id of product to add, quantity: change quantity to... }
+ * @param {Object} item { product_id: String, quantity: Number }
  * @param {Object} context {user: user making request}
  * @returns {Promise} resolves to updated cart
  */
@@ -201,10 +212,12 @@ exports.updateItemQuantity = (obj, { product_id, quantity }, context) => {
         if (matchingItems.length === 0) {
             return new DoesNotExistError("Product Not in Cart");
         } else if (quantity <= 0) {
+            // Remove if new quantity <= 0
             cart.items = cart.items.filter(
                 i => i.product.toString() !== product_id
             );
         } else {
+            // Update item to specified quantity.
             cart.items = cart.items.map(i => {
                 if (i.product.toString() === product_id) {
                     i.quantity = quantity;

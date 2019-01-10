@@ -13,7 +13,7 @@ const { mustBeLoggedIn } = require("../../../utils/authHelper");
 exports.createUser = (obj, { username }) => User.create({ username });
 
 /**
- * Delete a user by id.  Also deletes all of the product they own in the marketplace.
+ * Delete a user by id.  Also deletes all products they own.
  *
  * @param {*} obj unused
  * @param {Object} fields unused

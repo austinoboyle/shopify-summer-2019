@@ -17,16 +17,33 @@ const { createQuery, populateTotals } = require("../../utils/utils");
  */
 exports.queryTypes = `
 type Query {
-    "Get users by username or id"
+    """
+    Get users by username or id"
+
+    Access Required: NONE
+    """
     users(id: ID, username: String): [User!]
 
-    "Get products by id, title, owner, or availability"
-    products(id: ID, title: String, owner: String, inStockOnly: Boolean=false): [Product!]
+    """
+    Get products by id, title, owner, or availability.  Set the 'inStockOnly'
+    flag to true to only get items that are available for purchase.
+    
+    Access Required: NONE
+    """
+    products(id: ID, title: String, owner: ID, inStockOnly: Boolean=false): [Product!]
 
-    "Get your active cart, if any.  Can only have one active cart at a time"
+    """
+    Get your active cart, if any.  Can only have one active cart at a time
+    
+    Access Required: USER
+    """
     cart: Cart
 
-    "Get your past orders"
+    """
+    Get your past orders
+
+    Access Required: USER
+    """
     orders(id: ID): [Order!]
 }
 `;
@@ -46,7 +63,7 @@ const users = (obj, { id, username }, context, info) => {
  * Query products
  *
  * @param {*} obj unused
- * @param {*} query { id:String, name:String, owner:String, inStockOnly: Boolean }
+ * @param {*} query { id:String, title:String, owner:String, inStockOnly: Boolean }
  * @returns {Promise} resolves to array of Products
  */
 const products = (obj, { id, title, owner, inStockOnly }, context, info) => {
@@ -64,8 +81,8 @@ const products = (obj, { id, title, owner, inStockOnly }, context, info) => {
  * Query carts
  *
  * @param {*} obj unused
- * @param {*} query { id:String, user_id:String, active:Boolean }
- * @returns {Promise} resolves to array of Carts
+ * @param {*} query { id:String}
+ * @returns {Promise} resolves to a single Cart or null
  */
 const cart = (obj, { id }, context) => {
     mustBeLoggedIn(context.user);
@@ -93,7 +110,7 @@ const orders = (obj, { id }, context) => {
 
 /**
  * Exported object containing all query Resolvers
- * {users, shops, products, carts, orders}
+ * {users, products, cart, orders}
  * @type {Object}
  */
 exports.queryResolvers = {
