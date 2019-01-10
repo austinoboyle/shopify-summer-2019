@@ -1,3 +1,4 @@
+// Fallback error method.
 class AppError extends Error {
     constructor(message, status) {
         super(message);
@@ -7,12 +8,14 @@ class AppError extends Error {
     }
 }
 
+// Not logged in/authorized to do something.
 class UnauthorizedError extends AppError {
     constructor(message) {
         super(message || "Unauthorized", 401);
     }
 }
 
+// Not enough inventory for that item.
 class InventoryError extends AppError {
     constructor(product) {
         super(
@@ -30,6 +33,8 @@ class DoesNotExistError extends AppError {
     }
 }
 
+// Special Error for Failed Orders.  Adds an invalidFields property to the error
+// object that shows the client what products failed validation and why.
 class OrderError extends AppError {
     constructor(message, invalidFields) {
         super(

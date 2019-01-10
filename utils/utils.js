@@ -27,6 +27,5 @@ exports.populateTotals = order => {
  * @returns {Object} with undefined/null properties deleted
  */
 exports.createQuery = obj => {
-    const result = _.pickBy(obj, val => val !== null && val !== undefined);
-    return result;
+    return _.pickBy(obj, val => val !== null && val !== undefined);
 };
