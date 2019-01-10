@@ -20,6 +20,8 @@ exports.createProduct = (obj, { title, price, inventory_count }, context) => {
         price,
         inventory_count,
         owner: context.user._id
+    }).then(p => {
+        return Product.populate(p, "owner");
     });
 };
 
@@ -50,7 +52,7 @@ exports.updateProduct = (
                     "You do not own a product with that ID"
                 );
             }
-            return updated;
+            return Product.populate(updated, "owner");
         });
 };
 
