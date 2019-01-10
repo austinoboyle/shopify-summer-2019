@@ -71,6 +71,9 @@ exports.submitOrder = (obj, {}, context) => {
             return Product.findOne({ _id: itemID })
                 .exec()
                 .then(product => {
+                    if (!product) {
+                        throw new DoesNotExistError("Product No Longer Exists");
+                    }
                     product.inventory_count -= i.quantity;
                     return product.save();
                 })
@@ -113,6 +116,9 @@ exports.submitOrder = (obj, {}, context) => {
  */
 
 exports.addToCart = (obj, { product_id, quantity }, context) => {
+    if (quantity <= 0) {
+        throw new AppError("Quantity must be >= 0.");
+    }
     mustBeLoggedIn(context.user);
     let activeCart;
     let activeProduct;
