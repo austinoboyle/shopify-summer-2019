@@ -3,3 +3,4 @@
 // db();
 const TIMEOUT = process.env.CI ? 10000 : 3000;
 jest.setTimeout(TIMEOUT);
+global.Promise = require("bluebird");
