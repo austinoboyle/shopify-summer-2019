@@ -35,7 +35,6 @@ const handleContext = ({ req }) => {
         return { user: null };
     } else {
         return User.findOne({ _id: token }).then(u => {
-            console.log(u);
             return { user: u };
         });
     }

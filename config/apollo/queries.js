@@ -27,7 +27,7 @@ type Query {
     cart: Cart
 
     "Get your past orders"
-    orders: [Order!]
+    orders(id: ID): [Order!]
 }
 `;
 
@@ -79,18 +79,15 @@ const cart = (obj, { id }, context) => {
  * Query orders
  *
  * @param {*} obj unused
- * @param {*} query {}
+ * @param {*} query {id: order id}
  * @returns {Promise} resolves to array of Orders made by the user
  */
-const orders = (obj, {}, context) => {
+const orders = (obj, { id }, context) => {
     mustBeLoggedIn(context.user);
-    return Order.find({ user: context.user._id })
+    const query = createQuery({ _id: id, user: context.user._id });
+    return Order.find(query)
         .populate("user")
-        .exec()
-        .then(o => {
-            console.log("ORDERS", o);
-            return o;
-        });
+        .exec();
 };
 
 /**
