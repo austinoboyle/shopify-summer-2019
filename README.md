@@ -12,8 +12,9 @@
 
 ### Live Version
 
-LIVE URL: http://shopify.austinoboyle.com
-NOTE: https not currently working
+**LIVE URL: http://shopify.austinoboyle.com/graphql**
+
+**NOTE:** https not currently working
 
 ### Authentication
 
@@ -22,10 +23,18 @@ the graphQL interface (bottom-left corner) to {"authorization": "USER_ID"} where
 USER_ID is id of the user you are trying "logged in" with. You can query all
 the users to see which ones are available.
 
+**Example:**
+
+```json
+{
+    "authorization": "111111111111111111111111"
+}
+```
+
 ### Resetting the Database
 
 I created a utility route that resets the db to the seed data (see `/data`).
-Navigate to the `/resetDB` route to use this.
+Navigate to `{{APP_URL}}/resetDB` route to use this.
 
 ## Database Design
 
