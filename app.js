@@ -57,6 +57,10 @@ app.get("/resetDb", (req, res) => {
     );
 });
 
+app.get("/", (req, res) => {
+    res.status(200).send("Hello World");
+});
+
 server.applyMiddleware({ app });
 
 app.listen({ port: 4000 }, () =>
