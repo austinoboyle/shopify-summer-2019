@@ -27,20 +27,6 @@ module.exports = [
         title: "Vector Cereal",
         owner: ObjectId("111111111111111111111112"),
         price: 8.99,
-        inventory_count: 250
-    },
-    {
-        _id: ObjectId("311111111111111111111115"),
-        title: "Orchid",
-        owner: ObjectId("111111111111111111111113"),
-        price: 14.99,
-        inventory_count: 15
-    },
-    {
-        _id: ObjectId("311111111111111111111116"),
-        title: "Flower Pot",
-        owner: ObjectId("111111111111111111111113"),
-        price: 7.99,
-        inventory_count: 90
+        inventory_count: 0
     }
 ];
