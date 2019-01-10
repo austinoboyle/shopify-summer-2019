@@ -21,7 +21,7 @@ type Query {
     users(id: ID, username: String): [User!]
 
     "Get products by id, title, owner, or availability"
-    products(id: ID, title: String, owner: String, available: Boolean): [Product!]
+    products(id: ID, title: String, owner: String, inStockOnly: Boolean=false): [Product!]
 
     "Get your active cart, if any.  Can only have one active cart at a time"
     cart: Cart
@@ -46,12 +46,13 @@ const users = (obj, { id, username }, context, info) => {
  * Query products
  *
  * @param {*} obj unused
- * @param {*} query { id:String, name:String, owner:String, available: Boolean }
+ * @param {*} query { id:String, name:String, owner:String, inStockOnly: Boolean }
  * @returns {Promise} resolves to array of Products
  */
-const products = (obj, { id, title, owner, available }, context, info) => {
+const products = (obj, { id, title, owner, inStockOnly }, context, info) => {
     let query = createQuery({ _id: id, title, owner });
-    if (available) {
+
+    if (inStockOnly) {
         query.inventory_count = { $gt: 0 };
     }
     return Product.find(query)
