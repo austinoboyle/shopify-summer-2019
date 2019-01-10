@@ -12,5 +12,9 @@ module.exports = [
     {
         username: "user2",
         _id: ObjectId("111111111111111111111113")
+    },
+    {
+        username: "user3",
+        _id: ObjectId("111111111111111111111114")
     }
 ];

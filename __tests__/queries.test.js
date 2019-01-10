@@ -121,21 +121,13 @@ describe("Product Queries", () => {
             });
         });
         it("Availability", done => {
-            const q1 = `query{products(available: true){id}}`;
-            const q2 = `query{products(available: false){id}}`;
-            Promise.all([graphQLQuery(q1), graphQLQuery(q2)]).then(
-                ([available, unavailable]) => {
-                    expect(available.data.products.length).toBe(
-                        seedData.products.filter(p => p.inventory_count > 0)
-                            .length
-                    );
-                    expect(unavailable.data.products.length).toBe(
-                        seedData.products.filter(p => p.inventory_count === 0)
-                            .length
-                    );
-                    done();
-                }
-            );
+            const q1 = `query{products(inStockOnly: true){id}}`;
+            return graphQLQuery(q1).then(res => {
+                expect(res.data.products.length).toBe(
+                    seedData.products.filter(p => p.inventory_count > 0).length
+                );
+                done();
+            });
         });
     });
 });
