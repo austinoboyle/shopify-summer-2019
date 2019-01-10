@@ -8,9 +8,9 @@ const {
     DoesNotExistError,
     AppError,
     OrderError
-} = require("../../../errors");
-const { mustBeLoggedIn } = require("../../authHelper");
-const { populateTotals } = require("../../../utils");
+} = require("../../../utils/errors");
+const { mustBeLoggedIn } = require("../../../utils/authHelper");
+const { populateTotals } = require("../../../utils/utils");
 
 function orderFromCart(cart) {
     cart.items = cart.items.map(i => {

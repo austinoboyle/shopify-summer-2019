@@ -1,10 +1,10 @@
 /** @module resetDb*/
 
-const User = require("./models/User");
-const Product = require("./models/Product");
-const Cart = require("./models/Cart");
-const Order = require("./models/Order");
-const data = require("./data");
+const User = require("../models/User");
+const Product = require("../models/Product");
+const Cart = require("../models/Cart");
+const Order = require("../models/Order");
+const data = require("../data");
 
 /** Reset the database based on seed data */
 module.exports = () => {

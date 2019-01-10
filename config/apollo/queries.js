@@ -3,13 +3,13 @@
  * @module queries
  */
 
-const { mustBeLoggedIn } = require("../authHelper");
+const { mustBeLoggedIn } = require("../../utils/authHelper");
 const User = require("../../models/User");
 const Product = require("../../models/Product");
 const Cart = require("../../models/Cart");
 const Order = require("../../models/Order");
 
-const { createQuery, populateTotals } = require("../../utils");
+const { createQuery, populateTotals } = require("../../utils/utils");
 
 /**
  * Documentation/Definitions for Query Types

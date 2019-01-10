@@ -1,9 +1,9 @@
 /** @module mutations-products */
 
 const Product = require("../../../models/Product");
-const { createQuery } = require("../../../utils");
-const { mustBeLoggedIn } = require("../../authHelper");
-const { DoesNotExistError } = require("../../../errors");
+const { createQuery } = require("../../../utils/utils");
+const { mustBeLoggedIn } = require("../../../utils/authHelper");
+const { DoesNotExistError } = require("../../../utils/errors");
 
 /**
  * Create a new Product

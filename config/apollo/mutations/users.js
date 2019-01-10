@@ -1,7 +1,7 @@
 /** @module mutations-users */
 const User = require("../../../models/User");
 const Product = require("../../../models/Product");
-const { mustBeLoggedIn } = require("../../authHelper");
+const { mustBeLoggedIn } = require("../../../utils/authHelper");
 /**
  * Create a new user
  *

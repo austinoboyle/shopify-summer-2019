@@ -5,7 +5,7 @@ const { ApolloServer } = require("apollo-server-express");
 
 const initDB = require("./config/mongoose");
 const { schema } = require("./config/apollo");
-const resetDb = require("./resetDb");
+const resetDb = require("./utils/resetDb");
 const User = require("./models/User");
 global.Promise = require("bluebird");
 

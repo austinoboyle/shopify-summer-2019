@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const resetDb = require("../../resetDb");
+const resetDb = require("../../utils/resetDb");
 const { schema } = require("../apollo");
 const { graphql } = require("graphql");
 
