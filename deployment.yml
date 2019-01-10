@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+    name: shopify-deploy
+spec:
+    replicas: 2
+    template:
+        metadata:
+            labels:
+                app: shopify
+        spec:
+            containers:
+                - name: shopify
+                  image: gcr.io/shopify-dev-project/summer2019:v1 # image we pushed
+                  ports:
+                      - containerPort: 4000
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: shopify-lb
+    labels:
+        app: shopify
+spec:
+    type: LoadBalancer
+    ports:
+        - name: http
+          protocol: TCP
+          port: 80
+          targetPort: 4000
+    selector:
+        app: shopify
