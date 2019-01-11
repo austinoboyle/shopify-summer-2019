@@ -1,4 +1,4 @@
-# Winter 2019 Developer Intern Challenge
+# Summer 2019 Developer Intern Challenge
 
 ## Getting Started
 
